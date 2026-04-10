@@ -1,4 +1,4 @@
-extern crate alloc;
+use crate::ElementInto;
 
 /// Extension trait for element-wise conversion of a [`Vec`](alloc::vec::Vec) via [`Into`].
 pub trait VecInto<T> {
@@ -13,6 +13,15 @@ impl<T> VecInto<T> for alloc::vec::Vec<T> {
     where
         T: Into<RT>,
     {
+        self.into_iter().map(Into::into).collect()
+    }
+}
+
+impl<T, TR> ElementInto<alloc::vec::Vec<TR>> for alloc::vec::Vec<T>
+where
+    T: Into<TR>,
+{
+    fn element_into(self) -> alloc::vec::Vec<TR> {
         self.into_iter().map(Into::into).collect()
     }
 }

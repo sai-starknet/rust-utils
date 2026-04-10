@@ -2,6 +2,8 @@ use core::hash::{BuildHasher, Hash};
 
 use hashbrown::{HashMap, HashSet};
 
+use crate::ElementInto;
+
 /// Extension trait for converting the keys and/or values of a [`HashMap`] via [`Into`].
 pub trait HashMapInto<K, V, S> {
     /// Convert the keys of a `HashMap` into new types.
@@ -14,7 +16,7 @@ pub trait HashMapInto<K, V, S> {
     where
         V: Into<VR>;
     /// Convert both the keys and values of a `HashMap` into new types.
-    fn hashmap_into<KR, VR>(self) -> HashMap<KR, VR, S>
+    fn entries_into<KR, VR>(self) -> HashMap<KR, VR, S>
     where
         K: Into<KR>,
         KR: Eq + Hash,
@@ -35,7 +37,7 @@ impl<K: Eq + Hash, V, S: BuildHasher + Default> HashMapInto<K, V, S> for HashMap
     {
         self.into_iter().map(|(k, v)| (k, v.into())).collect()
     }
-    fn hashmap_into<KR, VR>(self) -> HashMap<KR, VR, S>
+    fn entries_into<KR, VR>(self) -> HashMap<KR, VR, S>
     where
         K: Into<KR>,
         KR: Eq + Hash,
@@ -44,6 +46,22 @@ impl<K: Eq + Hash, V, S: BuildHasher + Default> HashMapInto<K, V, S> for HashMap
         self.into_iter()
             .map(|(k, v)| (k.into(), v.into()))
             .collect()
+    }
+}
+
+/// Extension trait for converting an iterator of key-value pairs into a [`HashMap`].
+pub trait IntoHashMap<K, V, S> {
+    /// Convert an iterator of key-value pairs into a `HashMap` with converted keys and values.
+    fn into_hashmap(self) -> HashMap<K, V, S>;
+}
+
+#[cfg(feature = "vec")]
+impl<K: Eq + Hash, V, S: BuildHasher + Default, T> IntoHashMap<K, V, S> for alloc::vec::Vec<T>
+where
+    T: Into<(K, V)>,
+{
+    fn into_hashmap(self) -> HashMap<K, V, S> {
+        self.into_iter().map(Into::into).collect()
     }
 }
 
@@ -62,6 +80,16 @@ impl<V: Eq + Hash, S: BuildHasher + Default> HashSetInto<V, S> for HashSet<V, S>
         V: Into<VR>,
         VR: Eq + Hash,
     {
+        self.into_iter().map(Into::into).collect()
+    }
+}
+
+impl<T, TR> ElementInto<HashSet<TR>> for HashSet<T>
+where
+    T: Into<TR>,
+    TR: Eq + Hash,
+{
+    fn element_into(self) -> HashSet<TR> {
         self.into_iter().map(Into::into).collect()
     }
 }
@@ -95,14 +123,14 @@ mod tests {
     fn hashmap_into_converts_both() {
         let mut map = HashMap::new();
         map.insert(1u8, 10u8);
-        let converted: HashMap<u16, u16> = map.hashmap_into();
+        let converted: HashMap<u16, u16> = map.entries_into();
         assert_eq!(converted.get(&1u16), Some(&10u16));
     }
 
     #[test]
     fn hashmap_into_empty() {
         let map: HashMap<u8, u8> = HashMap::new();
-        let converted: HashMap<u16, u16> = map.hashmap_into();
+        let converted: HashMap<u16, u16> = map.entries_into();
         assert!(converted.is_empty());
     }
 
