@@ -1,0 +1,19 @@
+[workspace]
+members = ["macros", "conversion"]
+resolver = "2"
+
+[workspace.package]
+repository = "http://github.com/sai-starknet/rust-utils"
+edition = "2021"
+license = "MIT"
+authors = ["Bengineer <blockengineer42@gmail.com>"]
+
+
+[workspace.dependencies]
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
