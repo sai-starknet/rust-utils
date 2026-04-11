@@ -1,8 +1,8 @@
 use core::hash::{BuildHasher, Hash};
 
-use hashbrown::{HashMap, HashSet};
-
+extern crate std;
 use crate::ElementInto;
+use std::collections::{HashMap, HashSet};
 
 /// Extension trait for converting the keys and/or values of a [`HashMap`] via [`Into`].
 pub trait HashMapInto<K, V, S> {
