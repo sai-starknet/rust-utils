@@ -7,12 +7,12 @@ use crate::ElementInto;
 /// Extension trait for converting the keys and/or values of a [`HashMap`] via [`Into`].
 pub trait HashMapInto<K, V, S> {
     /// Convert the keys of a `HashMap` into new types.
-    fn key_into<KR>(self) -> HashMap<KR, V, S>
+    fn keys_into<KR>(self) -> HashMap<KR, V, S>
     where
         K: Into<KR>,
         KR: Eq + Hash;
     /// Convert the values of a `HashMap` into new types.
-    fn value_into<VR>(self) -> HashMap<K, VR, S>
+    fn values_into<VR>(self) -> HashMap<K, VR, S>
     where
         V: Into<VR>;
     /// Convert both the keys and values of a `HashMap` into new types.
@@ -24,14 +24,14 @@ pub trait HashMapInto<K, V, S> {
 }
 
 impl<K: Eq + Hash, V, S: BuildHasher + Default> HashMapInto<K, V, S> for HashMap<K, V, S> {
-    fn key_into<KR>(self) -> HashMap<KR, V, S>
+    fn keys_into<KR>(self) -> HashMap<KR, V, S>
     where
         K: Into<KR>,
         KR: Eq + Hash,
     {
         self.into_iter().map(|(k, v)| (k.into(), v)).collect()
     }
-    fn value_into<VR>(self) -> HashMap<K, VR, S>
+    fn values_into<VR>(self) -> HashMap<K, VR, S>
     where
         V: Into<VR>,
     {
@@ -103,7 +103,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(1u8, "a");
         map.insert(2u8, "b");
-        let converted: HashMap<u16, &str> = map.key_into();
+        let converted: HashMap<u16, &str> = map.keys_into();
         assert_eq!(converted.get(&1u16), Some(&"a"));
         assert_eq!(converted.get(&2u16), Some(&"b"));
         assert_eq!(converted.len(), 2);
@@ -114,7 +114,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert("x", 1u8);
         map.insert("y", 2u8);
-        let converted: HashMap<&str, u16> = map.value_into();
+        let converted: HashMap<&str, u16> = map.values_into();
         assert_eq!(converted.get("x"), Some(&1u16));
         assert_eq!(converted.get("y"), Some(&2u16));
     }
