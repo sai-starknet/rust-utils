@@ -1,8 +1,6 @@
-use core::hash::{BuildHasher, Hash};
-
 extern crate std;
-use crate::ElementInto;
 use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasher, Hash};
 
 /// Extension trait for converting the keys and/or values of a [`HashMap`] via [`Into`].
 pub trait HashMapInto<K, V, S> {
@@ -55,10 +53,12 @@ pub trait IntoHashMap<K, V, S> {
     fn into_hashmap(self) -> HashMap<K, V, S>;
 }
 
-#[cfg(feature = "vec")]
-impl<K: Eq + Hash, V, S: BuildHasher + Default, T> IntoHashMap<K, V, S> for alloc::vec::Vec<T>
+impl<T, K, V, S> IntoHashMap<K, V, S> for T
 where
-    T: Into<(K, V)>,
+    T: IntoIterator,
+    T::Item: Into<(K, V)>,
+    K: Eq + Hash,
+    S: BuildHasher + Default,
 {
     fn into_hashmap(self) -> HashMap<K, V, S> {
         self.into_iter().map(Into::into).collect()
@@ -68,28 +68,18 @@ where
 /// Extension trait for converting the values of a [`HashSet`] via [`Into`].
 pub trait HashSetInto<V, S> {
     /// Convert the values of a `HashSet` into new types.
-    fn set_into<VR>(self) -> HashSet<VR, S>
+    fn set_items_into<VR>(self) -> HashSet<VR, S>
     where
         V: Into<VR>,
         VR: Eq + Hash;
 }
 
 impl<V: Eq + Hash, S: BuildHasher + Default> HashSetInto<V, S> for HashSet<V, S> {
-    fn set_into<VR>(self) -> HashSet<VR, S>
+    fn set_items_into<VR>(self) -> HashSet<VR, S>
     where
         V: Into<VR>,
         VR: Eq + Hash,
     {
-        self.into_iter().map(Into::into).collect()
-    }
-}
-
-impl<T, TR> ElementInto<HashSet<TR>> for HashSet<T>
-where
-    T: Into<TR>,
-    TR: Eq + Hash,
-{
-    fn element_into(self) -> HashSet<TR> {
         self.into_iter().map(Into::into).collect()
     }
 }
@@ -140,7 +130,7 @@ mod tests {
         set.insert(1u8);
         set.insert(2u8);
         set.insert(3u8);
-        let converted: HashSet<u16> = set.set_into();
+        let converted: HashSet<u16> = set.set_items_into();
         assert!(converted.contains(&1u16));
         assert!(converted.contains(&2u16));
         assert!(converted.contains(&3u16));
@@ -150,7 +140,23 @@ mod tests {
     #[test]
     fn set_into_empty() {
         let set: HashSet<u8> = HashSet::new();
-        let converted: HashSet<u16> = set.set_into();
+        let converted: HashSet<u16> = set.set_items_into();
         assert!(converted.is_empty());
+    }
+
+    #[test]
+    fn into_hashmap_from_vec_of_tuples() {
+        let pairs = std::vec![(1u8, "a"), (2u8, "b")];
+        let map: HashMap<u8, &str> = pairs.into_hashmap();
+        assert_eq!(map.get(&1u8), Some(&"a"));
+        assert_eq!(map.get(&2u8), Some(&"b"));
+        assert_eq!(map.len(), 2);
+    }
+
+    #[test]
+    fn into_hashmap_empty() {
+        let pairs: std::vec::Vec<(u8, u8)> = std::vec![];
+        let map: HashMap<u8, u8> = pairs.into_hashmap();
+        assert!(map.is_empty());
     }
 }
